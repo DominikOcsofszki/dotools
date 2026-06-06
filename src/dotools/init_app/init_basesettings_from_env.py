@@ -29,10 +29,20 @@ if __name__ == "__main__":
     print(settings)
 """
 
-    package_dir = next(
-        p for p in Path("src").iterdir() if p.is_dir() and not p.name.startswith(".")
+    src_path = Path("src")
+
+    package_dir = (
+        next(
+            (
+                p
+                for p in src_path.iterdir()
+                if p.is_dir() and not p.name.startswith(".")
+            ),
+            Path("."),
+        )
+        if src_path.is_dir()
+        else Path(".")
     )
 
     settings_file = package_dir / "__settings.py"
-
     deps.helper.ask_text_to_path(settings_file, code)
