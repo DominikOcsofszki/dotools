@@ -88,8 +88,8 @@ class ConsoleServices(BaseModel):
         self.console.print(f"{text}")
         if self.confirm.ask(f"write to {path}?"):
             if not path.parent.exists():
-                self.console.print(f"Created {path.parent}")
                 path.parent.mkdir(exist_ok=True, parents=True)
+                self.console.print(f"Created {path.parent}")
             path.write_text(text)
             self.console.print(f"Created {path}")
 
