@@ -1,0 +1,50 @@
+version: 1
+upstreamSchema: spec-driven
+schemaName: parallel-task-apply
+expectedTaskArtifact:
+  id: tasks
+  generates: tasks.md
+  template: tasks.md
+taskTemplate: |
+  # Tasks
+
+  Group work into dependency-ordered batches. Each top-level checkbox is one tracked batch. Under it, describe independent workstreams as ordinary bullets (not checkboxes), including the outcome, owned paths, and verification for each. State dependencies between batches and include integration verification where needed.
+
+  ## 1. <!-- Batch name and prerequisites, if any -->
+
+  - [ ] 1.1 <!-- Batch outcome; include integration verification -->
+    - Workstream: <!-- outcome; owned paths; verification -->
+    - Workstream: <!-- outcome; owned paths; verification -->
+
+  ## 2. <!-- Batch name and prerequisites, if any -->
+
+  - [ ] 2.1 <!-- Batch outcome; include integration verification -->
+    - Workstream: <!-- outcome; owned paths; verification -->
+    - Workstream: <!-- outcome; owned paths; verification -->
+applyInstruction: 'Read the current context files and work through pending tracked batch checkboxes
+  in dependency order. For the current batch, inspect the ordinary workstream bullets and
+  confirm they are independent with non-overlapping file ownership. When the assistant supports
+  sub-agents and the workstreams are safely independent, delegate those workstreams; otherwise
+  complete them sequentially. Delegated agents must not edit the shared task checklist. The
+  coordinating assistant integrates results, resolves conflicts, runs the batch''s verification,
+  and only then marks its tracked checkbox complete. Pause on unclear requirements, blockers,
+  conflicts, or design changes. This is best-effort guidance: it does not replace the installed
+  apply skill or guarantee agent delegation.'
+readme: |-
+  # Parallel Task Apply Schema
+
+  This user-level schema is generated from the currently installed OpenSpec `spec-driven` schema with a small local overlay.
+
+  ## Regenerate after an OpenSpec upgrade
+
+  Run this manually after upgrading the OpenSpec CLI:
+
+  ```bash
+  dotools openspec generate-schema
+  ```
+
+  The generator resolves the installed built-in schema, fingerprints its inputs, applies the local overlay, validates a staged copy, and only then replaces this generated schema. If the fingerprint is unchanged, it exits without rewriting the schema. If upstream task/apply structure conflicts with the overlay or validation fails, it reports the issue and preserves the currently installed schema.
+
+  The generated schema is written to `./openspec/schemas/parallel-task-apply/` relative to the current directory. Use `--dest` to write elsewhere and `--overlay` to supply a different customization overlay. Select it for a change with `--schema parallel-task-apply`.
+
+  Parallel delegation is best-effort. The schema groups independent workstreams under tracked batch checkboxes, but it does not schedule agents or override the installed `/opsx:apply` skill. Use sequential work when delegation is unavailable or file ownership overlaps.
