@@ -2,7 +2,7 @@ from pathlib import Path
 from dotools.sdk import AppConfig
 
 
-def create_gitignore(*, deps: AppConfig) -> None:
+def create_gitignore(*, deps: AppConfig) -> bool:
     code = """
 # Byte-compiled / cache
 __pycache__/
@@ -43,4 +43,4 @@ dist/
 
     path = Path("./__.gitignore")
 
-    deps.helper.ask_text_to_path(path, code)
+    return deps.helper.ask_text_to_path(path, code)

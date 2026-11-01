@@ -84,14 +84,16 @@ class ConsoleServices(BaseModel):
     def rule(self, title: str) -> None:
         self.console.rule(title)
 
-    def ask_text_to_path(self, path: Path, text: str):
+    def ask_text_to_path(self, path: Path, text: str) -> bool:
         self.console.print(f"{text}")
-        if self.confirm.ask(f"write to {path}?"):
-            if not path.parent.exists():
-                path.parent.mkdir(exist_ok=True, parents=True)
-                self.console.print(f"Created {path.parent}")
-            path.write_text(text)
-            self.console.print(f"Created {path}")
+        if not self.confirm.ask(f"write to {path}?"):
+            return False
+        if not path.parent.exists():
+            path.parent.mkdir(exist_ok=True, parents=True)
+            self.console.print(f"Created {path.parent}")
+        path.write_text(text)
+        self.console.print(f"Created {path}")
+        return True
 
 
 class AppServices(BaseModel):

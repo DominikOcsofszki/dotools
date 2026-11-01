@@ -8,6 +8,8 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "fastmcp>=4.1.4",
+    "mcp-plugin-gateway",
     "pydantic-settings>=2.14.1",
     "pyyaml>=6.0.3",
     "typer>=0.26.7",
@@ -16,6 +18,12 @@ dependencies = [
 [project.scripts]
 dotools = "dotools.app:main"
 
+[project.entry-points."mcp_plugin_gateway.plugins"]
+dotools = "dotools.mcp_plugin:build_server"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.uv.sources]
+mcp-plugin-gateway = { git = "https://github.com/DominikOcsofszki/mcp-plugin-gateway", rev = "0.0.1" }
