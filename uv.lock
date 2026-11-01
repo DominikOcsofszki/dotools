@@ -7,6 +7,12 @@ resolution-markers = [
     "python_full_version < '3.14'",
 ]
 
+[manifest]
+members = [
+    "dotools",
+    "dotools-cli-plugin",
+]
+
 [[package]]
 name = "aiofile"
 version = "3.12.3"
@@ -362,20 +368,33 @@ name = "dotools"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "fastmcp" },
-    { name = "mcp-plugin-gateway" },
     { name = "pydantic-settings" },
     { name = "pyyaml" },
-    { name = "typer" },
+    { name = "rich" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "fastmcp", specifier = ">=4.1.4" },
-    { name = "mcp-plugin-gateway", git = "https://github.com/DominikOcsofszki/mcp-plugin-gateway?rev=0.0.1" },
     { name = "pydantic-settings", specifier = ">=2.14.1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "typer", specifier = ">=0.26.7" },
+    { name = "rich", specifier = ">=14.0.0" },
+]
+
+[[package]]
+name = "dotools-cli-plugin"
+version = "0.1.0"
+source = { editable = "plugins/dotools-cli" }
+dependencies = [
+    { name = "dotools" },
+    { name = "fastmcp" },
+    { name = "mcp-plugin-gateway" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dotools", editable = "." },
+    { name = "fastmcp", specifier = ">=4.1.4" },
+    { name = "mcp-plugin-gateway", git = "https://github.com/DominikOcsofszki/mcp-plugin-gateway?rev=0.0.2" },
 ]
 
 [[package]]
@@ -640,8 +659,8 @@ wheels = [
 
 [[package]]
 name = "mcp-plugin-gateway"
-version = "0.1.0"
-source = { git = "https://github.com/DominikOcsofszki/mcp-plugin-gateway?rev=0.0.1#2685e016448c1d976819691c69e7ad1fdd203416" }
+version = "0.0.2"
+source = { git = "https://github.com/DominikOcsofszki/mcp-plugin-gateway?rev=0.0.2#144fac682f749d78e1726ba5396b14fe4387316a" }
 dependencies = [
     { name = "fastmcp" },
     { name = "pydantic-settings" },

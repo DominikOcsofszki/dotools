@@ -57,3 +57,6 @@ def build_server() -> FastMCP:
         return f"Task ownership is valid: {task_path}"
 
     return server
+
+
+__all__ = ["build_server"]

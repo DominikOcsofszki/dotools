@@ -1,0 +1,21 @@
+[project]
+name = "dotools-cli-plugin"
+version = "0.1.0"
+description = "Gateway CLI plugin for dotools"
+requires-python = ">=3.12"
+dependencies = [
+    "dotools",
+    "fastmcp>=4.1.4",
+    "mcp-plugin-gateway",
+]
+
+[project.entry-points."mcp_plugin_gateway.plugins"]
+dotools = "dotools_cli_plugin:build_server"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+dotools = { workspace = true }
+mcp-plugin-gateway = { git = "https://github.com/DominikOcsofszki/mcp-plugin-gateway", rev = "0.0.2" }

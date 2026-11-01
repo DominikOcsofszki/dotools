@@ -81,13 +81,13 @@ readme: |-
   Run this manually after upgrading the OpenSpec CLI:
 
   ```bash
-  dotools openspec generate-schema
+  uv run --project dotools --all-packages mcp-plugin-gateway dotools openspec-generate-schema
   ```
 
   The generator resolves the installed built-in schema, fingerprints its inputs, applies the local overlay, validates a staged copy, and only then replaces this generated schema. If the fingerprint is unchanged, it exits without rewriting the schema. If upstream task/apply structure conflicts with the overlay or validation fails, it reports the issue and preserves the currently installed schema.
 
   The generated schema is written to `./openspec/schemas/parallel-task-apply/` relative to the current directory. Use `--dest` to write elsewhere and `--overlay` to supply a different customization overlay. Select it for a change with `--schema parallel-task-apply`.
 
-  Run `dotools openspec generate-schema --check` in CI to fail when the checked-in generated schema differs from the current upstream schema and overlay.
+  Run `uv run --project dotools --all-packages mcp-plugin-gateway dotools openspec-generate-schema --check` in CI to fail when the checked-in generated schema differs from the current upstream schema and overlay.
 
-  Task checkboxes represent workstreams and integration checks so OpenSpec progress reflects the actual work. `dotools openspec validate-tasks <tasks.md>` checks that every task declares ownership and that paths do not overlap within a batch. The separately named `/openspec-parallel-apply` skill provides the coordinator workflow; it is not overwritten by `openspec update --force`. Parallel execution remains best-effort and falls back to sequential work when safe delegation is unavailable.
+  Task checkboxes represent workstreams and integration checks so OpenSpec progress reflects the actual work. `uv run --project dotools --all-packages mcp-plugin-gateway dotools openspec-validate-tasks <tasks.md>` checks that every task declares ownership and that paths do not overlap within a batch. The separately named `/openspec-parallel-apply` skill provides the coordinator workflow; it is not overwritten by `openspec update --force`. Parallel execution remains best-effort and falls back to sequential work when safe delegation is unavailable.
