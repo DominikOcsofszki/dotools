@@ -394,7 +394,7 @@ dependencies = [
 requires-dist = [
     { name = "dotools", editable = "." },
     { name = "fastmcp", specifier = ">=4.1.4" },
-    { name = "mcp-plugin-gateway", git = "https://github.com/DominikOcsofszki/mcp-plugin-gateway?rev=0.0.2" },
+    { name = "mcp-plugin-gateway", git = "https://github.com/DominikOcsofszki/mcp-plugin-gateway?rev=0.0.3" },
 ]
 
 [[package]]
@@ -660,7 +660,7 @@ wheels = [
 [[package]]
 name = "mcp-plugin-gateway"
 version = "0.0.2"
-source = { git = "https://github.com/DominikOcsofszki/mcp-plugin-gateway?rev=0.0.2#144fac682f749d78e1726ba5396b14fe4387316a" }
+source = { git = "https://github.com/DominikOcsofszki/mcp-plugin-gateway?rev=0.0.3#7ad30439fcbf2a04b4d72816f4b38b66f7f4b4af" }
 dependencies = [
     { name = "fastmcp" },
     { name = "pydantic-settings" },

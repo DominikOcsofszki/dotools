@@ -18,4 +18,4 @@ build-backend = "hatchling.build"
 
 [tool.uv.sources]
 dotools = { workspace = true }
-mcp-plugin-gateway = { git = "https://github.com/DominikOcsofszki/mcp-plugin-gateway", rev = "0.0.2" }
+mcp-plugin-gateway = { git = "https://github.com/DominikOcsofszki/mcp-plugin-gateway", rev = "0.0.3" }
