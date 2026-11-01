@@ -2,17 +2,23 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 from dotools.openspec.errors import SchemaGenerationError
 
 DEFAULT_OVERLAY_PATH = Path(__file__).with_name("overlay.yaml")
 
-SUPPORTED_OVERLAY_VERSION = 1
+SUPPORTED_OVERLAY_VERSION = 2
 SUPPORTED_UPSTREAM_SCHEMA = "spec-driven"
 
 
@@ -26,6 +32,43 @@ class TaskArtifact(BaseModel):
     template: str
 
 
+class ArtifactOverride(BaseModel):
+    """Overrides for one upstream artifact."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    instruction: str | None = None
+    templatePath: str | None = None
+    templateContent: str | None = None
+
+    @field_validator("templatePath")
+    @classmethod
+    def _check_template_path(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        path = PurePosixPath(value)
+        if (
+            path.is_absolute()
+            or ".." in path.parts
+            or not path.parts
+            or not value.strip()
+        ):
+            raise ValueError("templatePath must be a non-empty relative path")
+        return value
+
+    @model_validator(mode="after")
+    def _check_template_override(self) -> ArtifactOverride:
+        if (self.templatePath is None) != (self.templateContent is None):
+            raise ValueError(
+                "templatePath and templateContent must be supplied together"
+            )
+        if self.instruction is not None and not self.instruction.strip():
+            raise ValueError("instruction overrides must not be empty")
+        if self.instruction is None and self.templateContent is None:
+            raise ValueError("an artifact override must set instruction or template")
+        return self
+
+
 class Overlay(BaseModel):
     """A validated customization overlay."""
 
@@ -35,7 +78,7 @@ class Overlay(BaseModel):
     upstreamSchema: str
     schemaName: str
     expectedTaskArtifact: TaskArtifact
-    taskTemplate: str
+    artifactOverrides: dict[str, ArtifactOverride]
     applyInstruction: str
     readme: str
 
@@ -64,6 +107,15 @@ class Overlay(BaseModel):
     def _check_schema_name(cls, value: str) -> str:
         if not value.strip():
             raise ValueError("schemaName must not be empty")
+        return value
+
+    @field_validator("artifactOverrides")
+    @classmethod
+    def _check_artifact_overrides(
+        cls, value: dict[str, ArtifactOverride]
+    ) -> dict[str, ArtifactOverride]:
+        if not value:
+            raise ValueError("artifactOverrides must contain at least one artifact")
         return value
 
     def fingerprint_payload(self) -> dict[str, Any]:

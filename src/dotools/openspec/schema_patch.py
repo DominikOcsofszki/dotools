@@ -17,10 +17,9 @@ _NAME_PATTERN = re.compile(r"^name:\s*spec-driven\s*$", re.MULTILINE)
 _ARTIFACT_ID = re.compile(r"^  - id:\s*(?P<id>\S+)\s*$")
 _ARTIFACT_BOUNDARY = re.compile(r"^  - id:")
 _APPLY_KEY = re.compile(r"^apply:\s*$")
-_INSTRUCTION_KEY = re.compile(r"^  instruction:\s*[|>]\s*$")
+_INSTRUCTION_KEY = re.compile(r"^(?P<indent> *)instruction:\s*[|>]\s*$")
 
 _ARTIFACT_INDENT = "    "
-_INSTRUCTION_INDENT = "    "
 
 
 def _indent(line: str) -> int:
@@ -99,23 +98,33 @@ def _verify_apply_tracks(apply_lines: list[str], artifact: TaskArtifact) -> None
         )
 
 
-def _replace_apply_instruction(
-    apply_lines: list[str], instruction: str
+def _replace_instruction(
+    lines: list[str], start: int, end: int, instruction: str, indent: int
 ) -> list[str]:
-    start = _find_unique(
-        apply_lines,
-        lambda line: _INSTRUCTION_KEY.match(line) is not None,
-        "The upstream apply instruction format changed; review the overlay.",
+    block = lines[start:end]
+    instruction_start = _find_unique(
+        block,
+        lambda line: (
+            (match := _INSTRUCTION_KEY.match(line)) is not None
+            and len(match.group("indent")) == indent
+        ),
+        "The upstream instruction format changed; review the overlay.",
     )
-    end = _block_end(
-        apply_lines, start, lambda line: bool(line.strip()) and _indent(line) <= 2
+    instruction_end = _block_end(
+        block,
+        instruction_start,
+        lambda line: bool(line.strip()) and _indent(line) <= indent,
     )
-    replacement = ["  instruction: |"]
+    replacement = [f"{' ' * indent}instruction: |"]
     replacement.extend(
-        f"{_INSTRUCTION_INDENT}{line}" if line else _INSTRUCTION_INDENT
+        f"{' ' * (indent + 2)}{line}" if line else " " * (indent + 2)
         for line in instruction.splitlines()
     )
-    return apply_lines[:start] + replacement + apply_lines[end:]
+    return (
+        lines[: start + instruction_start]
+        + replacement
+        + lines[start + instruction_end :]
+    )
 
 
 def patch_schema(schema_text: str, overlay: Overlay) -> str:
@@ -125,13 +134,40 @@ def patch_schema(schema_text: str, overlay: Overlay) -> str:
     schema_text = _rename_schema(schema_text, overlay.schemaName)
     lines = schema_text.splitlines()
 
-    _verify_task_artifact(_task_artifact_block(lines, artifact), artifact)
+    task_block = _task_artifact_block(lines, artifact)
+    _verify_task_artifact(task_block, artifact)
+
+    for artifact_id, override in overlay.artifactOverrides.items():
+        artifact_start = _find_unique(
+            lines,
+            lambda line: (match := _ARTIFACT_ID.match(line)) is not None
+            and match.group("id") == artifact_id,
+            f"The upstream {artifact_id!r} artifact was not found; review the overlay.",
+        )
+        artifact_end = _block_end(
+            lines,
+            artifact_start,
+            lambda line: _ARTIFACT_BOUNDARY.match(line) is not None
+            or _APPLY_KEY.match(line) is not None,
+        )
+        block = lines[artifact_start:artifact_end]
+        if override.templatePath is not None:
+            expected = f"{_ARTIFACT_INDENT}template: {override.templatePath}"
+            if expected not in block:
+                raise SchemaGenerationError(
+                    f"The upstream {artifact_id!r} template path changed; "
+                    "review the overlay."
+                )
+        if override.instruction is not None:
+            lines = _replace_instruction(
+                lines, artifact_start, artifact_end, override.instruction, indent=4
+            )
 
     apply_start, apply_end = _apply_block(lines)
     apply_lines = lines[apply_start:apply_end]
     _verify_apply_tracks(apply_lines, artifact)
 
-    lines[apply_start:apply_end] = _replace_apply_instruction(
-        apply_lines, overlay.applyInstruction
+    lines = _replace_instruction(
+        lines, apply_start, apply_end, overlay.applyInstruction, indent=2
     )
     return "\n".join(lines) + "\n"

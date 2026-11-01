@@ -57,7 +57,10 @@ def _resolve_request(
     overlay = load_overlay(overlay_path or DEFAULT_OVERLAY_PATH)
     destination = (dest or cwd / "openspec" / "schemas" / overlay.schemaName).resolve()
     return GenerationRequest(
-        overlay=overlay, destination=destination, force=force, yes=yes
+        overlay=overlay,
+        destination=destination,
+        force=force,
+        yes=yes,
     )
 
 
@@ -98,19 +101,24 @@ def generate_schema(
     overlay_path: Path | None = None,
     force: bool = False,
     yes: bool = False,
+    check: bool = False,
 ) -> None:
     """Generate and install the customized schema."""
     helper = deps.helper
     cwd = Path.cwd()
     request = _resolve_request(
-        cwd=cwd, dest=dest, overlay_path=overlay_path, force=force, yes=yes
+        cwd=cwd,
+        dest=dest,
+        overlay_path=overlay_path,
+        force=force,
+        yes=yes,
     )
     overlay = request.overlay
 
     source_dir = resolve_installed_schema(overlay.upstreamSchema, cwd)
     fingerprint = compute_fingerprint(source_dir, overlay)
 
-    if _is_current(request, fingerprint):
+    if not check and _is_current(request, fingerprint):
         helper.info(f"{overlay.schemaName} is current ({fingerprint[:12]}).")
         return
 
@@ -119,6 +127,17 @@ def generate_schema(
         staging, validation_output = _stage_and_validate(source_dir, overlay, work_root)
         if validation_output:
             helper.info(validation_output)
+
+        if check:
+            diff = diff_trees(request.destination, staging)
+            if diff:
+                print_diff(helper, diff)
+                raise SchemaGenerationError(
+                    f"{overlay.schemaName} is out of date at {request.destination}; "
+                    "run `dotools openspec generate-schema` to update it."
+                )
+            helper.success(f"{overlay.schemaName} is up to date.")
+            return
 
         helper.rule(f"Diff: upstream {overlay.upstreamSchema} -> {overlay.schemaName}")
         diff = diff_trees(source_dir, staging)

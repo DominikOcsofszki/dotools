@@ -1,39 +1,62 @@
-version: 1
+version: 2
 upstreamSchema: spec-driven
 schemaName: parallel-task-apply
 expectedTaskArtifact:
   id: tasks
   generates: tasks.md
   template: tasks.md
-taskTemplate: |
-  # Tasks
+artifactOverrides:
+  tasks:
+    instruction: |
+      Create a dependency-ordered implementation plan grouped into numbered batches.
+      Each implementation workstream MUST be a tracked checkbox, not a plain bullet.
+      Each checkbox description MUST state the outcome and its verification.
+      Add an indented `paths:` line under every checkbox with the exact repository-
+      relative files or directories owned by that workstream. Use `paths: none` for
+      integration-only checks. Paths within the same batch MUST NOT overlap, including
+      parent/child directory overlaps. Add an indented `verify:` line when the
+      verification is too detailed for the checkbox description. Add a separate
+      tracked integration checkbox in a batch when integration work is needed.
+      Put dependencies in batch headings and order batches so prerequisites come first.
+      Keep each batch's tests and documentation with the work that calls for them.
+    templatePath: tasks.md
+    templateContent: |
+      # Tasks
 
-  Group work into dependency-ordered batches. Each top-level checkbox is one tracked batch. Under it, describe independent workstreams as ordinary bullets (not checkboxes), including the outcome, owned paths, and verification for each. State dependencies between batches and include integration verification where needed.
+      Organize implementation into dependency-ordered batches. Every workstream and
+      any required batch integration check is a tracked checkbox. Give each checkbox
+      exact, non-overlapping ownership using `paths:` and state its verification.
+      The coordinator marks checkboxes only after the workstream is integrated and
+      verified. Use `paths: none` for integration-only checks.
 
-  ## 1. <!-- Batch name and prerequisites, if any -->
+      ## 1. <!-- Batch name; prerequisites: none or earlier batch numbers -->
 
-  - [ ] 1.1 <!-- Batch outcome; include integration verification -->
-    - Workstream: <!-- outcome; owned paths; verification -->
-    - Workstream: <!-- outcome; owned paths; verification -->
+      - [ ] 1.1 <!-- Workstream outcome and verification -->
+        - paths: `src/feature.py`, `tests/test_feature.py`
+      - [ ] 1.2 <!-- Independent workstream outcome and verification -->
+        - paths: `docs/feature.md`
+      - [ ] 1.3 <!-- Integration check outcome and verification -->
+        - paths: none
 
-  ## 2. <!-- Batch name and prerequisites, if any -->
+      ## 2. <!-- Batch name; prerequisites: batch 1 -->
 
-  - [ ] 2.1 <!-- Batch outcome; include integration verification -->
-    - Workstream: <!-- outcome; owned paths; verification -->
-    - Workstream: <!-- outcome; owned paths; verification -->
-applyInstruction: 'Read the current context files and work through pending tracked batch checkboxes
-  in dependency order. For the current batch, inspect the ordinary workstream bullets and
-  confirm they are independent with non-overlapping file ownership. When the assistant supports
-  sub-agents and the workstreams are safely independent, delegate those workstreams; otherwise
-  complete them sequentially. Delegated agents must not edit the shared task checklist. The
-  coordinating assistant integrates results, resolves conflicts, runs the batch''s verification,
-  and only then marks its tracked checkbox complete. Pause on unclear requirements, blockers,
-  conflicts, or design changes. This is best-effort guidance: it does not replace the installed
-  apply skill or guarantee agent delegation.'
+      - [ ] 2.1 <!-- Workstream outcome and verification -->
+        - paths: `src/other.py`
+      - [ ] 2.2 <!-- Integration check outcome and verification -->
+        - paths: none
+applyInstruction: |
+  Read the context files and follow the dedicated `openspec-parallel-apply` skill
+  for this schema. Process batches in dependency order. Within a batch, validate
+  ownership paths and delegate independent workstreams only when separate agents
+  can safely work without editing the shared task checklist. The coordinator
+  integrates the results, resolves conflicts, runs verification, and then marks
+  the relevant workstream checkboxes complete. If delegation is unavailable or
+  ownership overlaps, work sequentially. Pause on unclear requirements, blockers,
+  conflicts, or design changes.
 readme: |-
   # Parallel Task Apply Schema
 
-  This user-level schema is generated from the currently installed OpenSpec `spec-driven` schema with a small local overlay.
+  This project-local schema is generated from the currently installed OpenSpec `spec-driven` schema with a small local overlay.
 
   ## Regenerate after an OpenSpec upgrade
 
@@ -47,4 +70,6 @@ readme: |-
 
   The generated schema is written to `./openspec/schemas/parallel-task-apply/` relative to the current directory. Use `--dest` to write elsewhere and `--overlay` to supply a different customization overlay. Select it for a change with `--schema parallel-task-apply`.
 
-  Parallel delegation is best-effort. The schema groups independent workstreams under tracked batch checkboxes, but it does not schedule agents or override the installed `/opsx:apply` skill. Use sequential work when delegation is unavailable or file ownership overlaps.
+  Run `dotools openspec generate-schema --check` in CI to fail when the checked-in generated schema differs from the current upstream schema and overlay.
+
+  Task checkboxes represent workstreams and integration checks so OpenSpec progress reflects the actual work. `dotools openspec validate-tasks <tasks.md>` checks that every task declares ownership and that paths do not overlap within a batch. The separately named `/openspec-parallel-apply` skill performs the coordinator workflow; it is not overwritten by `openspec update --force`. Parallel execution remains best-effort and falls back to sequential work when safe delegation is unavailable.

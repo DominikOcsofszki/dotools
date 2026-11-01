@@ -32,9 +32,11 @@ def build_staging(source_dir: Path, staging: Path, overlay: Overlay) -> Path:
         ) from error
     _write_text(schema_path, patch_schema(schema_text, overlay))
 
-    _write_text(
-        staging / TEMPLATES_DIR / overlay.expectedTaskArtifact.template,
-        overlay.taskTemplate,
-    )
+    for override in overlay.artifactOverrides.values():
+        if override.templatePath is not None and override.templateContent is not None:
+            _write_text(
+                staging / TEMPLATES_DIR / override.templatePath,
+                override.templateContent,
+            )
     _write_text(staging / README_FILE, overlay.readme)
     return staging
