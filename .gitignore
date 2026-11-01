@@ -32,3 +32,6 @@ dist/
 
 # uv
 .python-version
+
+# dotools schema generator state
+.parallel-task-apply.state.json
