@@ -18,7 +18,7 @@ from dotools.openspec.errors import SchemaGenerationError
 
 DEFAULT_OVERLAY_PATH = Path(__file__).with_name("overlay.yaml")
 
-SUPPORTED_OVERLAY_VERSION = 2
+SUPPORTED_OVERLAY_VERSION = 3
 SUPPORTED_UPSTREAM_SCHEMA = "spec-driven"
 
 
@@ -38,6 +38,8 @@ class ArtifactOverride(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     instruction: str | None = None
+    instructionAppend: str | None = None
+    example: str | None = None
     templatePath: str | None = None
     templateContent: str | None = None
 
@@ -62,10 +64,20 @@ class ArtifactOverride(BaseModel):
             raise ValueError(
                 "templatePath and templateContent must be supplied together"
             )
-        if self.instruction is not None and not self.instruction.strip():
-            raise ValueError("instruction overrides must not be empty")
-        if self.instruction is None and self.templateContent is None:
+        if self.instruction is not None and self.instructionAppend is not None:
+            raise ValueError("instruction and instructionAppend are mutually exclusive")
+        if self.example is not None and self.instructionAppend is None:
+            raise ValueError("example requires instructionAppend")
+        if (
+            self.instruction is None
+            and self.instructionAppend is None
+            and self.templateContent is None
+        ):
             raise ValueError("an artifact override must set instruction or template")
+        for field_name in ("instruction", "instructionAppend", "example"):
+            value = getattr(self, field_name)
+            if value is not None and not value.strip():
+                raise ValueError(f"{field_name} must not be empty")
         return self
 
 
@@ -79,7 +91,8 @@ class Overlay(BaseModel):
     schemaName: str
     expectedTaskArtifact: TaskArtifact
     artifactOverrides: dict[str, ArtifactOverride]
-    applyInstruction: str
+    applyInstruction: str | None = None
+    applyInstructionAppend: str | None = None
     readme: str
 
     @field_validator("version")
@@ -117,6 +130,16 @@ class Overlay(BaseModel):
         if not value:
             raise ValueError("artifactOverrides must contain at least one artifact")
         return value
+
+    @model_validator(mode="after")
+    def _check_apply_instruction(self) -> Overlay:
+        if (self.applyInstruction is None) == (
+            self.applyInstructionAppend is None
+        ):
+            raise ValueError(
+                "provide exactly one of applyInstruction or applyInstructionAppend"
+            )
+        return self
 
     def fingerprint_payload(self) -> dict[str, Any]:
         """Return a stable, JSON-serializable representation for hashing."""

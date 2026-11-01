@@ -16,6 +16,11 @@ artifacts:
     template: tasks.md
     instruction: |
       Write a flat task list.
+      Example:
+      ```
+      flat task example
+      ```
+      When applicable, append workflow follow-up as plain bullets.
     requires:
       - design
 apply:
@@ -27,25 +32,25 @@ apply:
 
 
 class SchemaPatchTests(unittest.TestCase):
-    def test_project_overlay_overrides_task_instruction_and_apply_instruction(self):
+    def test_overlay_preserves_upstream_guidance_and_adds_parallel_guidance(self):
         overlay = load_overlay(DEFAULT_OVERLAY_PATH)
 
         result = patch_schema(UPSTREAM_SCHEMA, overlay)
 
         self.assertIn("name: parallel-task-apply", result)
-        self.assertIn(
-            "Create a dependency-ordered implementation plan grouped into "
-            "numbered batches.",
-            result,
-        )
+        self.assertIn("Write a flat task list.", result)
+        self.assertIn("Parallel batches for this schema:", result)
+        self.assertIn("Apply one task at a time.", result)
+        self.assertIn("Use the project's dedicated", result)
         self.assertIn("openspec-parallel-apply` skill", result)
-        self.assertNotIn("Write a flat task list.", result)
-        self.assertNotIn("Apply one task at a time.", result)
+        self.assertIn("Document the export API", result)
+        self.assertNotIn("flat task example", result)
+        self.assertIn("When applicable, append workflow follow-up", result)
 
     def test_template_path_drift_fails_loudly(self):
         overlay = Overlay.model_validate(
             {
-                "version": 2,
+                "version": 3,
                 "upstreamSchema": "spec-driven",
                 "schemaName": "custom",
                 "expectedTaskArtifact": {
@@ -59,7 +64,7 @@ class SchemaPatchTests(unittest.TestCase):
                         "templateContent": "custom template",
                     }
                 },
-                "applyInstruction": "apply",
+                "applyInstructionAppend": "apply addition",
                 "readme": "readme",
             }
         )

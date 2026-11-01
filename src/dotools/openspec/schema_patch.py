@@ -98,8 +98,15 @@ def _verify_apply_tracks(apply_lines: list[str], artifact: TaskArtifact) -> None
         )
 
 
-def _replace_instruction(
-    lines: list[str], start: int, end: int, instruction: str, indent: int
+def _update_instruction(
+    lines: list[str],
+    start: int,
+    end: int,
+    *,
+    indent: int,
+    instruction: str | None = None,
+    instruction_append: str | None = None,
+    example: str | None = None,
 ) -> list[str]:
     block = lines[start:end]
     instruction_start = _find_unique(
@@ -115,10 +122,27 @@ def _replace_instruction(
         instruction_start,
         lambda line: bool(line.strip()) and _indent(line) <= indent,
     )
+    original_lines = block[instruction_start + 1 : instruction_end]
+    original = "\n".join(
+        line[indent + 2 :] if line.strip() else "" for line in original_lines
+    )
+    content = instruction if instruction is not None else original
+    if instruction_append is not None:
+        content = f"{content.rstrip()}\n\n{instruction_append.strip()}"
+    if example is not None:
+        pattern = re.compile(r"(?ms)^Example:\n```[^\n]*\n.*?^```(?=\n|$)")
+        content, replacements = pattern.subn(
+            f"Example:\n```\n{example.strip()}\n```", content, count=1
+        )
+        if replacements != 1:
+            raise SchemaGenerationError(
+                "The upstream task example changed; review the overlay."
+            )
+
     replacement = [f"{' ' * indent}instruction: |"]
     replacement.extend(
-        f"{' ' * (indent + 2)}{line}" if line else " " * (indent + 2)
-        for line in instruction.splitlines()
+        f"{' ' * (indent + 2)}{line}" if line else ""
+        for line in content.splitlines()
     )
     return (
         lines[: start + instruction_start]
@@ -158,16 +182,30 @@ def patch_schema(schema_text: str, overlay: Overlay) -> str:
                     f"The upstream {artifact_id!r} template path changed; "
                     "review the overlay."
                 )
-        if override.instruction is not None:
-            lines = _replace_instruction(
-                lines, artifact_start, artifact_end, override.instruction, indent=4
+        if (
+            override.instruction is not None
+            or override.instructionAppend is not None
+        ):
+            lines = _update_instruction(
+                lines,
+                artifact_start,
+                artifact_end,
+                indent=4,
+                instruction=override.instruction,
+                instruction_append=override.instructionAppend,
+                example=override.example,
             )
 
     apply_start, apply_end = _apply_block(lines)
     apply_lines = lines[apply_start:apply_end]
     _verify_apply_tracks(apply_lines, artifact)
 
-    lines = _replace_instruction(
-        lines, apply_start, apply_end, overlay.applyInstruction, indent=2
+    lines = _update_instruction(
+        lines,
+        apply_start,
+        apply_end,
+        indent=2,
+        instruction=overlay.applyInstruction,
+        instruction_append=overlay.applyInstructionAppend,
     )
     return "\n".join(lines) + "\n"

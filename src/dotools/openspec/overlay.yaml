@@ -1,4 +1,4 @@
-version: 2
+version: 3
 upstreamSchema: spec-driven
 schemaName: parallel-task-apply
 expectedTaskArtifact:
@@ -7,56 +7,74 @@ expectedTaskArtifact:
   template: tasks.md
 artifactOverrides:
   tasks:
-    instruction: |
-      Create a dependency-ordered implementation plan grouped into numbered batches.
-      Each implementation workstream MUST be a tracked checkbox, not a plain bullet.
-      Each checkbox description MUST state the outcome and its verification.
-      Add an indented `paths:` line under every checkbox with the exact repository-
-      relative files or directories owned by that workstream. Use `paths: none` for
-      integration-only checks. Paths within the same batch MUST NOT overlap, including
-      parent/child directory overlaps. Add an indented `verify:` line when the
-      verification is too detailed for the checkbox description. Add a separate
-      tracked integration checkbox in a batch when integration work is needed.
-      Put dependencies in batch headings and order batches so prerequisites come first.
-      Keep each batch's tests and documentation with the work that calls for them.
+    instructionAppend: |
+      Parallel batches for this schema:
+      - Group related tracked workstreams under numbered headings in dependency order.
+        State prerequisites in each batch heading.
+      - Each independently executable workstream MUST be a tracked checkbox. Include
+        its outcome and verification in the task description, as above.
+      - Add an indented `paths:` line below each checkbox listing exact repository-
+        relative files or directories owned by that workstream. Use `paths: none` for
+        integration-only checks. Paths in one batch MUST NOT overlap, including
+        parent/child directory overlaps.
+      - Add a tracked integration task when a batch needs one. Keep tests and docs with
+        the work that calls for them, following the guidance above.
+      - The CLI counts each checkbox as a task; do not add a separate batch checkbox.
+      Follow the batch template below; this changes task grouping and ownership only.
+      All other guidance in this instruction remains in force.
+    example: |
+      # Tasks
+
+      ## 1. Setup (prerequisites: none)
+
+      - [ ] 1.1 Create the module structure and verify the expected files are present
+        - paths: `src/module.py`
+      - [ ] 1.2 Add dependencies and verify package installation succeeds
+        - paths: `pyproject.toml`
+
+      ## 2. Core implementation (prerequisites: batch 1)
+
+      - [ ] 2.1 Implement the export function and verify its tests pass
+        - paths: `src/export.py`, `tests/test_export.py`
+      - [ ] 2.2 Document the export API and verify the documented command works
+        - paths: `docs/export.md`
+      - [ ] 2.3 Verify the integrated export workflow
+        - paths: none
     templatePath: tasks.md
     templateContent: |
       # Tasks
 
-      Organize implementation into dependency-ordered batches. Every workstream and
-      any required batch integration check is a tracked checkbox. Give each checkbox
-      exact, non-overlapping ownership using `paths:` and state its verification.
-      The coordinator marks checkboxes only after the workstream is integrated and
-      verified. Use `paths: none` for integration-only checks.
+      Follow the tasks instruction, including its verification, dependency, testing,
+      and documentation requirements. Group work into dependency-ordered batches.
+      Each tracked checkbox is one workstream or integration check, not a batch.
+      Give every checkbox exact, non-overlapping ownership using `paths:`. Use
+      `paths: none` for integration-only checks.
 
-      ## 1. <!-- Batch name; prerequisites: none or earlier batch numbers -->
+      ## 1. <!-- Batch name; prerequisites: none or earlier batches -->
 
       - [ ] 1.1 <!-- Workstream outcome and verification -->
-        - paths: `src/feature.py`, `tests/test_feature.py`
+        - paths: `src/feature.py`
       - [ ] 1.2 <!-- Independent workstream outcome and verification -->
-        - paths: `docs/feature.md`
-      - [ ] 1.3 <!-- Integration check outcome and verification -->
-        - paths: none
+        - paths: `docs/feature.md`, `tests/test_feature_docs.py`
 
       ## 2. <!-- Batch name; prerequisites: batch 1 -->
 
       - [ ] 2.1 <!-- Workstream outcome and verification -->
-        - paths: `src/other.py`
+        - paths: `src/other.py`, `tests/test_other.py`
       - [ ] 2.2 <!-- Integration check outcome and verification -->
         - paths: none
-applyInstruction: |
-  Read the context files and follow the dedicated `openspec-parallel-apply` skill
-  for this schema. Process batches in dependency order. Within a batch, validate
-  ownership paths and delegate independent workstreams only when separate agents
-  can safely work without editing the shared task checklist. The coordinator
-  integrates the results, resolves conflicts, runs verification, and then marks
-  the relevant workstream checkboxes complete. If delegation is unavailable or
-  ownership overlaps, work sequentially. Pause on unclear requirements, blockers,
-  conflicts, or design changes.
+applyInstructionAppend: |
+  For this schema, numbered task headings are dependency-ordered batches and their
+  tracked checkboxes are workstreams. Before parallel work, confirm the batch's
+  `paths:` declarations are disjoint. Delegate only independent workstreams; agents
+  must not edit the shared checklist. The coordinator integrates results, resolves
+  conflicts, runs verification, and then marks completed workstreams. If safe
+  delegation is unavailable, work sequentially. Use the project's dedicated
+  `openspec-parallel-apply` skill when available. Keep all other apply guidance above.
 readme: |-
   # Parallel Task Apply Schema
 
-  This project-local schema is generated from the currently installed OpenSpec `spec-driven` schema with a small local overlay.
+  This schema is generated from the installed OpenSpec `spec-driven` schema. The overlay preserves upstream artifact guidance, adding parallel task grouping and coordination guidance while replacing only the conflicting flat task example and tasks template.
 
   ## Regenerate after an OpenSpec upgrade
 
@@ -72,4 +90,4 @@ readme: |-
 
   Run `dotools openspec generate-schema --check` in CI to fail when the checked-in generated schema differs from the current upstream schema and overlay.
 
-  Task checkboxes represent workstreams and integration checks so OpenSpec progress reflects the actual work. `dotools openspec validate-tasks <tasks.md>` checks that every task declares ownership and that paths do not overlap within a batch. The separately named `/openspec-parallel-apply` skill performs the coordinator workflow; it is not overwritten by `openspec update --force`. Parallel execution remains best-effort and falls back to sequential work when safe delegation is unavailable.
+  Task checkboxes represent workstreams and integration checks so OpenSpec progress reflects the actual work. `dotools openspec validate-tasks <tasks.md>` checks that every task declares ownership and that paths do not overlap within a batch. The separately named `/openspec-parallel-apply` skill provides the coordinator workflow; it is not overwritten by `openspec update --force`. Parallel execution remains best-effort and falls back to sequential work when safe delegation is unavailable.
