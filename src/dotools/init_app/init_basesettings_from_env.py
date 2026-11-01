@@ -2,7 +2,7 @@ from dotools.sdk import AppConfig
 from pathlib import Path
 
 
-def create_settings(env_vars: list[str], *, deps: AppConfig) -> None:
+def create_settings(env_vars: list[str], *, deps: AppConfig) -> bool:
     fields = "\n".join(f"    {name.lower()}: str" for name in env_vars)
 
     code = f"""from functools import cache
@@ -45,4 +45,4 @@ if __name__ == "__main__":
     )
 
     settings_file = package_dir / "__settings.py"
-    deps.helper.ask_text_to_path(settings_file, code)
+    return deps.helper.ask_text_to_path(settings_file, code)

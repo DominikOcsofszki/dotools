@@ -134,7 +134,8 @@ def generate_schema(
                 print_diff(helper, diff)
                 raise SchemaGenerationError(
                     f"{overlay.schemaName} is out of date at {request.destination}; "
-                    "run `dotools openspec generate-schema` to update it."
+                    "run `mcp-plugin-gateway dotools openspec-generate-schema` "
+                    "to update it."
                 )
             helper.success(f"{overlay.schemaName} is up to date.")
             return
